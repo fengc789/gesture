@@ -1,0 +1,96 @@
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+<meta name="format-detection" content="telephone=no">
+<title></title>
+<script src="gesture.js"></script>
+<script src="touch.js"></script>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var gesture = null;
+
+var chosepic = new Image,
+	errorpic = new Image,
+	successpic = new Image;
+
+chosepic.src = 'logo-chose.png';
+errorpic.src = 'logo-error.png';
+successpic.src = 'logo-success.png';
+
+var gesture = new _utils.DrawGesture(document.getElementById('canvas'), {
+	unchosecolor : '#929394',
+	chosecolor : '#666',
+	successcolor : '#7dc223',
+	errorcolor : '#f4422f',
+	chooseFn : function(){},
+	touchend : function(gesture){
+		var pwd = gesture.orders.join('');
+
+		//如果密码正确
+		if(pwd === '01258'){
+			gesture.successStatus();	//设置canvas正确状态
+		}else{
+			gesture.errorStatus();		//设置canvas错误状态
+		}
+		setTimeout(function(){
+			gesture.clear();		//清空状态
+		}, 1000);
+	},
+	drawInnerRound : function(gesture,ctx,x,y,r,pi){
+		var status = gesture.status;
+
+		//successpic, errorpic, chosepic引用的是函数外部的变量
+		//如何想到用闭包这样解决问题呢?
+		//1, 这3个变量(对象)不是核心的, 可以抽出来. 核心的是gesture,ctx,x,y,r, 应该要内部计算并提供, 于是可以用闭包
+		//2, etc...
+		if(status === 2){
+			ctx.drawImage(successpic, x-r * 0.8, y-r * 0.8, r*2*0.8 | 1, r*2*0.8 | 1);
+		}else if(status === 3){
+			ctx.drawImage(errorpic, x-r * 0.8, y-r * 0.8, r*2*0.8 | 1, r*2*0.8 | 1);
+		}else{
+			ctx.drawImage(chosepic, x-r * 0.8, y-r * 0.8, r*2*0.8 | 1, r*2*0.8 | 1);
+		}
+	}
+});
+
+var timing = 0;
+var drawFrame = function(){
+	gesture.ctx.clearRect(0,0,gesture.width,gesture.height);
+	gesture.draw();
+	timing = requestAnimationFrame(drawFrame);
+};
+
+gesture.init();
+drawFrame();
+
+
+/*
+父scope里
+当页面动画完毕后，向下传播一个事件
+scope.$on('$ionic.enter', function(){
+	scope.$broadcast('canvas.init');
+});
+
+指令里
+指令里接收这个事件，geture开始
+scope.$on('canvas.init', function(){
+	gesture.init();
+	drawFrame();
+});
+一定要注意当scope销毁时清除gesture!
+scope.$on('$destroy', function(){
+	cancelAnimationFrame(timing);
+	gesture.destroy();
+});
+
+
+为什么一定要在页面动画完毕后才gesture.init() ?
+因为touch时要计算canvas距离页面的距离，如果刚进页面就init()，此时canvas.getBoundingClientRect()计算的不是正确的值
+*/
+</script>
+</body>
+</html>
